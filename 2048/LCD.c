@@ -1,6 +1,6 @@
 #include "LCD.h"
 #include "gpio.h"
-#include <stdint.h>
+
 // initialize LCD controller
 void LCD_init(void) {
     PORTS_init();
@@ -13,12 +13,12 @@ void LCD_init(void) {
     LCD_nibble_write(0x30, 0);
     delayMs(1);
 
-    LCD_nibble_write(0x20, 0);  // use 4-bit data mode
+    LCD_nibble_write(0x20, 0);      // use 4-bit data mode
     delayMs(1);
-    LCD_command(0x28);          // set 4-bit data, 2-line, 5x7 font
-    LCD_command(0x06);          // move cursor right
-    LCD_command(0x01);          // clear screen, move cursor to home
-    LCD_command(0x0F);          // turn on display, cursor blinking
+    LCD_command(LCD_FUNCTIONSET);   // set 4-bit data, 2-line, 5x7 font
+    LCD_command(0x06);              // Set Entry
+    LCD_command(LCD_CLEARDISPLAY);  // clear screen, move cursor to home
+    LCD_command(LCD_DISPLAYCONTROL | LCD_DISPLAYON); //LCD on, no blink
 }
 
 /* PA2-PA5 for LCD D4-D7, respectively. 
@@ -90,6 +90,24 @@ void LCD_data(char data) {
     delayMs(1);
 }
 
+void LCD_setCursor(uint8_t col, uint8_t row)
+{
+  uint8_t row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
+  if ( row >= 2 ) 
+  {
+    row = 0;  //write to first line if out off bounds
+  }
+  
+  LCD_command(LCD_SETDDRAMADDR | (col + row_offsets[row]));
+}
+
+void LCD_print(char *str) {
+    int i = 0;
+    while(str[i] != 0){
+        LCD_data(str[i]);
+        i++;
+    }
+}
 
 /* delay n milliseconds (50 MHz CPU clock) */
 void delayMs(int n) {
@@ -98,4 +116,3 @@ void delayMs(int n) {
         for(j = 0; j < 6265; j++)
             {}  /* do nothing for 1 ms */
 }
-    
