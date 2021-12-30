@@ -83,6 +83,27 @@ _STOP_output_string:
 	LDMFD sp!, {lr, r4-r11}
 	mov pc, lr
 
+;* get the length of a string
+;* input  - r0 (ptr to string)
+;* output - r0 (int length) 
+string_length:
+	STMFD SP!,{lr, r4-r11}
+
+	mov r3,r0                ; move pointer to r3
+	eor r0, r0, r0			; set inc value to 0
+_next_length:
+	LDRB r0, [r3]            ; get character at pointer
+	CMP r0, #0x0             ; check if r0 is null
+	BEQ _STOP_output_string   ; if char is null stop,else ouptput character
+	add r3, r3, #1           ; increment pointer
+	add r0, r0, #1			; increment return value
+	b _print_string
+
+_STOP_string_length:
+	LDMFD sp!, {lr, r4-r11}
+	mov pc, lr
+
+
 ;* get string
 ;* input  - 
 ;* output - 
@@ -419,6 +440,7 @@ _DIV_NUM_DIGITS: UDIV r1,r1,r2   ; Divide int by 10
 ;* converts an integer to a string
 ;* input  - r0 (int), r1 (ptr to string)
 ;* output - r0 (ptr to string)
+;*		  - r1 (string length)
 int2str:
 	;* int in r0
 	;* ptr in r1
@@ -466,6 +488,7 @@ _LOOP_int2str:
 
 	BNE _LOOP_int2str
 	mov r0, r1
+	mov r1, r2
 	LDMFD SP!,{lr, r4-r11}
 	MOV pc, lr
 
