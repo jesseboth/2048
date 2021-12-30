@@ -5,25 +5,22 @@
  */
 #include "LCD.h"
 extern void output_string(char *str);
+extern void start(void);
 extern void init(void);
 
 int main(void) {
 	init();
-
-
-	// initialize LCD controller
 	LCD_init();
-	LCD_command(1);
-
-	// Write "HELLO" on LCD
-	LCD_data('H');
-	LCD_data('E');
-	LCD_data('L');
-	LCD_data('L');
-	LCD_data('O');
-//	delayMs(1000);
 
 
-	output_string((char *)"Did it do it?\n\r");
+	LCD_setCursor(0, 0);
+	LCD_print((char *)"Time: 00:00");
+	LCD_setCursor(0, 1);
+	LCD_print((char *)"Score: 0");
+
+	start();
+
+
+	// output_string((char *)"DONE\n\r");
 	return 0;
 }
