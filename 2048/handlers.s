@@ -2,9 +2,6 @@
 time_string:    .string "00:00:00", 0
 time_int:       .int 0
 
-score:          .word 0
-score_string:   .space 16
-
 game_active     .char 1     ; 1 when active, 0 by default
     .text
     .global Timer_Handler
@@ -21,9 +18,6 @@ game_active     .char 1     ; 1 when active, 0 by default
 
 ptr_to_time_string: .word time_string
 ptr_to_time_int:    .word time_int
-
-ptr_to_score:       .word score
-ptr_to_score_string:.word score_string
 
 ptr_to_game_active: .word game_active
 

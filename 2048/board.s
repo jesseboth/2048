@@ -14,7 +14,7 @@ boarder:    .string 9,9,9,27, "[37;40;1m+------+------+------+------+", 0xA, 0xD
 
 bottom:     .string 9,9,9,27, "[37;40;1m+------+------+------+------+", 0xA, 0xD, 0
 
-colors:     .string 27, "[30;48;5;117m", 0
+colors:     .string 27, "[0m",0,0,0,0,0,0,0,0,0,0,0
             .string 27, "[30;48;5;117m", 0
             .string 27, "[30;48;5;153m", 0
             .string 27, "[30;48;5;189m", 0
@@ -41,16 +41,19 @@ square_num: .string "0000", 0
 square_down:    .string 27, "[4B", 0
 square_right:   .string 27, "[7C", 0
 cursor_up:      .string 27, "[1A", 0
-cursor_left:      .string 27, "[#D", 0
+cursor_left:    .string 27, "[#D", 0
 
 ;* subboard:   .char 0x0, 0x0, 0x0, 0x0
 ;*             .char 0x0, 0x0, 0x0, 0x0
 ;*             .char 0x0, 0x0, 0x0, 0x0
 ;*             .char 0x0, 0x0, 0x0, 0x0
-subboard:   .char 0x2, 0x3, 0x0, 0x0
-            .char 0x1, 0x5, 0x4, 0x0
+subboard:   .char 0x2, 0x3, 0x3, 0x0
+            .char 0x1, 0x3, 0x4, 0x0
             .char 0x1, 0x0, 0x0, 0x4
-            .char 0x1, 0xA, 0x5, 0x0
+            .char 0x1, 0x1, 0x5, 0x0
+
+score:          .int 0
+score_string:   .space 16
 
 
     .text
@@ -59,12 +62,22 @@ subboard:   .char 0x2, 0x3, 0x0, 0x0
     .global draw_board
     .global clear_board
     .global shift_right_wrapper
+    .global shift_left_wrapper
+    .global shift_down_wrapper
+    .global shift_up_wrapper
+
 
     .global output_string
     .global str2int
     .global int2str
 
     .export shift_right_op
+    .export shift_left_op
+    .export shift_down_op
+    .export shift_up_op
+
+    .export LCD_setCursor
+    .export LCD_print
 
 ptr_to_clear:   .word clear 
 ptr_to_top_left:.word top_left
@@ -84,6 +97,9 @@ ptr_to_cursor_up:   .word cursor_up
 ptr_to_cursor_left:   .word cursor_left
 
 ptr_to_subboard:    .word subboard
+
+ptr_to_score:       .word score
+ptr_to_score_string:.word score_string
 
 SQUARE_WIDTH:   .equ 6
 SQUARE_HEIGHT:  .equ 3 
@@ -123,9 +139,6 @@ output_boarder:
 ; * output
 place_square:
 	STMFD SP!,{lr, r4-r11}
-
-    cmp r2, #0
-    beq _exit_place_square
 
     ;* save inputs
     mov r4, r0
@@ -171,6 +184,10 @@ _square_out:
 
     ldr r0, ptr_to_square
     bl output_string
+
+    cmp r6, #0
+    beq _exit_place_square
+
 
     ldr r0, ptr_to_cursor_up
     bl output_string
@@ -357,6 +374,68 @@ shift_right_wrapper:
 
     ldr r0, ptr_to_subboard
     bl shift_right_op
+    bl update_score
+
+    bl draw_board
 
 	LDMFD sp!, {lr}
+	mov pc, lr
+
+shift_left_wrapper:
+	STMFD SP!,{lr}
+
+    ldr r0, ptr_to_subboard
+    bl shift_left_op
+    bl update_score
+
+    bl draw_board
+
+	LDMFD sp!, {lr}
+	mov pc, lr
+
+shift_down_wrapper:
+	STMFD SP!,{lr}
+
+    ldr r0, ptr_to_subboard
+    bl shift_down_op
+    bl update_score
+
+    bl draw_board
+
+	LDMFD sp!, {lr}
+	mov pc, lr
+
+shift_up_wrapper:
+	STMFD SP!,{lr}
+
+    ldr r0, ptr_to_subboard
+    bl shift_up_op
+    bl update_score
+
+    bl draw_board
+
+	LDMFD sp!, {lr}
+	mov pc, lr
+
+;* updates the score in mem and on the LCD
+;* input - r0 (added score)
+update_score:
+	STMFD SP!,{lr, r4-r11}
+
+    ldr r4, ptr_to_score
+    ldr r1, [r4]                ; load the value
+    add r0, r0, r1              ; increment the score
+    str r0, [r4]                ; store in memory
+
+    ldr r1, ptr_to_score_string
+    bl int2str                  ; convert to string
+
+    mov r0, #7                  ; set LCD position
+    mov r1, #1
+    bl LCD_setCursor
+
+    ldr r0, ptr_to_score_string
+    bl LCD_print                ; output the score
+
+	LDMFD sp!, {lr, r4-r11}
 	mov pc, lr
