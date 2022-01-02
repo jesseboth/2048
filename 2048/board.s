@@ -43,23 +43,25 @@ square_right:   .string 27, "[7C", 0
 cursor_up:      .string 27, "[1A", 0
 cursor_left:    .string 27, "[#D", 0
 
-;* subboard:   .char 0x0, 0x0, 0x0, 0x0
-;*             .char 0x0, 0x0, 0x0, 0x0
-;*             .char 0x0, 0x0, 0x0, 0x0
-;*             .char 0x0, 0x0, 0x0, 0x0
-subboard:   .char 0x2, 0x3, 0x3, 0x0
-            .char 0x1, 0x3, 0x4, 0x0
-            .char 0x1, 0x0, 0x0, 0x4
-            .char 0x1, 0x1, 0x5, 0x0
+subboard:   .char 0x0, 0x0, 0x0, 0x0
+            .char 0x0, 0x0, 0x0, 0x0
+            .char 0x0, 0x0, 0x0, 0x0
+            .char 0x0, 0x0, 0x0, 0x0
+;* subboard:   .char 0x2, 0x3, 0x3, 0x0
+;*             .char 0x1, 0x3, 0x4, 0x0
+;*             .char 0x1, 0x0, 0x0, 0x4
+;*             .char 0x1, 0x1, 0x5, 0x0
 
 score:          .int 0
 score_string:   .space 16
+open_tiles:     .space 32
 
 
     .text
     .global output_boarder
     .global place_square
     .global draw_board
+    .global random_tile
     .global clear_board
     .global shift_right_wrapper
     .global shift_left_wrapper
@@ -79,32 +81,36 @@ score_string:   .space 16
     .export LCD_setCursor
     .export LCD_print
 
-ptr_to_clear:   .word clear 
+ptr_to_clear:   .word clear
 ptr_to_top_left:.word top_left
 ptr_to_center:  .word center
 ptr_to_boarder: .word boarder
-ptr_to_bottom: .word bottom
-ptr_to_colors: .word colors
-ptr_to_reset:  .word reset
-ptr_to_square: .word square
+ptr_to_bottom:  .word bottom
+ptr_to_colors:  .word colors
+ptr_to_reset:   .word reset
+ptr_to_square:  .word square
 ptr_to_square_num:  .word square_num
 ptr_to_square_val:  .word square_val
 
 
-ptr_to_square_down: .word square_down
-ptr_to_square_right: .word square_right
-ptr_to_cursor_up:   .word cursor_up
-ptr_to_cursor_left:   .word cursor_left
+ptr_to_square_down:     .word square_down
+ptr_to_square_right:    .word square_right
+ptr_to_cursor_up:       .word cursor_up
+ptr_to_cursor_left:     .word cursor_left
 
 ptr_to_subboard:    .word subboard
 
 ptr_to_score:       .word score
 ptr_to_score_string:.word score_string
 
+ptr_to_open_tiles:  .word open_tiles
+
 SQUARE_WIDTH:   .equ 6
 SQUARE_HEIGHT:  .equ 3 
 SQUARE_CENTER:  .equ 3
 SQUARE_OFFSET:  .equ 15
+BOARD_WIDTH:    .equ 4
+BOARD_HEIGHT:   .equ 4
 
 output_boarder:
 	STMFD SP!,{lr, r4-r11}
@@ -368,52 +374,191 @@ draw_board:
 	LDMFD sp!, {lr, r4-r11}
 	mov pc, lr
 
+random_tile:
+	STMFD SP!, {lr, r4-r11}
 
+    mov r5, #-1
+    mov r6, #0
+    ldr r0, ptr_to_subboard
+    ldr r1, ptr_to_open_tiles
+
+_loop_board_y:
+    mov r4, #0
+    add r5, r5, #1
+    cmp r5, #BOARD_HEIGHT
+    beq _stop_loop_board
+
+_loop_board_x:
+    cmp r4, #BOARD_WIDTH
+    beq _loop_board_y
+
+    ldrb r2, [r0]
+    cmp r2, #0x0
+    bne _skip_tile
+
+    strb r4, [r1]
+    strb r5, [r1, #1]
+    add r0, r0, #1
+    add r1, r1, #2
+    add r6, r6, #1
+    add r4, r4, #1
+	b _loop_board_x
+
+_skip_tile:
+    add r0, r0, #1
+    add r4, r4, #1
+    b _loop_board_x
+
+_stop_loop_board:
+    cmp r6, r6, #0
+    beq _game_over
+
+    mov r1, #0x0050   ; address of timer
+    movt r1, #0x4003
+    ldr r4, [r1]      ; value in timer
+    and r4, r4, #0xF  ; 16 possible tiles
+
+    ldr r2, ptr_to_open_tiles
+    eor r0, r0, r0          ; i
+    eor r1, r1, r1          ; cur
+_find_tile:
+    cmp r1, r4              ; compare cur to random
+    beq _tile_params        ; found
+
+    cmp r0, r6              ; can't be greater than length
+    beq _reset_tile_i
+
+    add r0, r0, #1
+    add r1, r1, #1
+	b _find_tile
+_reset_tile_i:
+    eor r0, r0, r0
+    add r1, r1, #1
+    b _find_tile
+
+_tile_params:
+    lsl r0, r0, #1      ; multiply by 2
+    add r1, r2, r0      ; increment ptr
+    ldrb r0, [r1]       ; x coord
+    ldrb r1, [r1, #1]   ; y coord
+
+    and r3, r4, #0x1F
+    cmp r3, #0x10
+    bne _tile_2
+    mov r2, #2
+    b _output_tile
+_tile_2:
+    mov r2, #1
+
+_output_tile:
+    bl update_subboard
+
+_game_over:                 ; TODO
+
+_exit_random_tile:
+	LDMFD sp!, {lr, r4-r11}
+	mov pc, lr
+
+
+;* shift right 
+;* input - r0 (new move)
+;*       - r1 (prev move)    
 shift_right_wrapper:
-	STMFD SP!,{lr}
+	STMFD SP!,{lr, r4-r5}
+
+    mov r4, r0
+    mov r5, r1
 
     ldr r0, ptr_to_subboard
     bl shift_right_op
-    bl update_score
 
-    bl draw_board
+    mov r2, r0  ; score
+    mov r0, r4  ; new
+    mov r1, r5  ; prev
+    bl update_shift
 
-	LDMFD sp!, {lr}
+	LDMFD sp!, {lr, r4-r5}
 	mov pc, lr
 
+;* shift left 
+;* input - r0 (new move)
+;*       - r1 (prev move)
 shift_left_wrapper:
-	STMFD SP!,{lr}
+	STMFD SP!,{lr, r4-r5}
+
+    mov r4, r0
+    mov r5, r1
 
     ldr r0, ptr_to_subboard
     bl shift_left_op
-    bl update_score
 
-    bl draw_board
+    mov r2, r0  ; score
+    mov r0, r4  ; new
+    mov r1, r5  ; prev
+    bl update_shift
 
-	LDMFD sp!, {lr}
+	LDMFD sp!, {lr, r4-r5}
 	mov pc, lr
 
+;* shift down
+;* input - r0 (new move)
+;*       - r1 (prev move)
 shift_down_wrapper:
-	STMFD SP!,{lr}
+	STMFD SP!,{lr, r4-r5}
+
+    mov r4, r0
+    mov r5, r1
 
     ldr r0, ptr_to_subboard
     bl shift_down_op
-    bl update_score
 
-    bl draw_board
+    mov r2, r0  ; score
+    mov r0, r4  ; new
+    mov r1, r5  ; prev
+    bl update_shift
 
-	LDMFD sp!, {lr}
+	LDMFD sp!, {lr, r4-r5}
 	mov pc, lr
 
+;* shift up
+;* input - r0 (new move)
+;*       - r1 (prev move)
 shift_up_wrapper:
-	STMFD SP!,{lr}
+	STMFD SP!,{lr, r4-r5}
+
+    mov r4, r0
+    mov r5, r1
 
     ldr r0, ptr_to_subboard
     bl shift_up_op
-    bl update_score
 
+    mov r2, r0  ; score
+    mov r0, r4  ; new
+    mov r1, r5  ; prev
+    bl update_shift
+
+	LDMFD sp!, {lr, r4-r5}
+	mov pc, lr
+
+
+;* complete shift opertation
+;* inputs - r0 (new move)
+;*        - r1 (prev move)
+;*        - r2 (score)
+update_shift:
+	STMFD SP!,{lr}
+    cmp r0, r1
+    bne _draw
+    cmp r2, #0
+    beq _exit_update_shift
+
+_draw:
+    mov r0, r2
+    bl update_score
+    bl random_tile
     bl draw_board
 
+_exit_update_shift:
 	LDMFD sp!, {lr}
 	mov pc, lr
 
@@ -436,6 +581,23 @@ update_score:
 
     ldr r0, ptr_to_score_string
     bl LCD_print                ; output the score
+
+	LDMFD sp!, {lr, r4-r11}
+	mov pc, lr
+
+;* updates the value on the subboard
+;* inputs - r0 (x)
+;*        - r1 (y)  
+;*        - r2 (value)        
+update_subboard:
+	STMFD SP!,{lr, r4-r11}
+
+    lsl r4, r1, #2
+    add r4, r4, r0
+    ldr r5, ptr_to_subboard
+    add r5, r5, r4
+
+    strb r2, [r5]
 
 	LDMFD sp!, {lr, r4-r11}
 	mov pc, lr
