@@ -13,9 +13,9 @@ int main(void) {
 	LCD_setCursor(0, 1);
 	LCD_print((char *)"Score: 0");
 
-	 keypad_init();
+	keypad_init();
 
-	 start();
+	start();
 
 	return 0;
 }
