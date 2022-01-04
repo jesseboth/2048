@@ -15,10 +15,10 @@
 int col[1];     // active column
 int wait[1];    // time to wait
 
-char keys[KEYPAD_HEIGHT][KEYPAD_WIDTH] = {  {'1', '2', '3', 'A'}, 
-                                            {'4', '5', '6', 'B'},
-                                            {'7', '8', '9', 'C'},
-                                            {'*', '0', '#', 'D'} };
+char keys[KEYPAD_HEIGHT][KEYPAD_WIDTH] = {  {'1', 'w', 'w', 'A'},
+                                            {'a', '5', '6', 'd'},
+                                            {'a', '8', '9', 'd'},
+                                            {'*', 's', 's', 'D'} };
 
 /** Initialize the keypad ports and interrupts */
 void keypad_init(void){
