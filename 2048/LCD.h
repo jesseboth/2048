@@ -1,5 +1,4 @@
-#include <stdint.h>
-
+#include "gpio.h"
 #define RS 1    // BIT0 mask for reg select
 #define EN 2    // BIT1 mask for E
 
@@ -41,11 +40,15 @@
 #define LCD_RUSSIAN     0x02
 #define LCD_EUROPEAN_II 0x03
 
-void delayMs(int n);
+void LCD_init(void);
+void LCD_setCursor(uint8_t col, uint8_t row);
+void LCD_print(char *str);
+void LCD_clear(void);
+void LCD_home(void);
+void LCD_enable(void);
+void LCD_disable(void);
+void PORTS_init(void);
 void LCD_nibble_write(char data, unsigned char control);
 void LCD_command(unsigned char command);
 void LCD_data(char data);
-void LCD_init(void);
-void PORTS_init(void);
-void LCD_setCursor(uint8_t col, uint8_t row);
-void LCD_print(char *str);
+void delayMs(int n);
