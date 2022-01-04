@@ -4,15 +4,15 @@ clear:      .string 27, "[0m", 27, "[?25l", 27, "[2J", 27, "[0;0;H", 0
 ;* clear:      .string 27, "[0m", 27, "[?25h", 27, "[2J", 27, "[0;0;H", 0
 
 
-top_left:   .string 27, "[5;26;H", 0
+top_left:   .string 27, "[2;2;H", 0
 
 center:     .string 0xA, 0xA, 0xA, 0
-boarder:    .string 9,9,9,27, "[37;40;1m+------+------+------+------+", 0xA, 0xD
-            .string 9,9,9,27, "[37;40;1m|      |      |      |      |", 0xA, 0xD
-            .string 9,9,9,27, "[37;40;1m|      |      |      |      |", 0xA, 0xD
-            .string 9,9,9,27, "[37;40;1m|      |      |      |      |", 0xA, 0xD, 0
+boarder:    .string 27, "[37;40;1m+------+------+------+------+", 0xA, 0xD
+            .string 27, "[37;40;1m|      |      |      |      |", 0xA, 0xD
+            .string 27, "[37;40;1m|      |      |      |      |", 0xA, 0xD
+            .string 27, "[37;40;1m|      |      |      |      |", 0xA, 0xD, 0
 
-bottom:     .string 9,9,9,27, "[37;40;1m+------+------+------+------+", 0xA, 0xD, 0
+bottom:     .string 27, "[37;40;1m+------+------+------+------+", 0xA, 0xD, 0
 
 colors:     .string 27, "[0m",0,0,0,0,0,0,0,0,0,0,0
             .string 27, "[30;48;5;117m", 0
@@ -47,10 +47,6 @@ subboard:   .char 0x0, 0x0, 0x0, 0x0
             .char 0x0, 0x0, 0x0, 0x0
             .char 0x0, 0x0, 0x0, 0x0
             .char 0x0, 0x0, 0x0, 0x0
-;* subboard:   .char 0x2, 0x3, 0x3, 0x0
-;*             .char 0x1, 0x3, 0x4, 0x0
-;*             .char 0x1, 0x0, 0x0, 0x4
-;*             .char 0x1, 0x1, 0x5, 0x0
 
 score:          .int 0
 score_string:   .space 16
@@ -116,8 +112,6 @@ output_boarder:
 	STMFD SP!,{lr, r4-r11}
 
     ldr r0, ptr_to_clear
-    bl output_string
-    ldr r0, ptr_to_center
     bl output_string
 
     ldr r0, ptr_to_boarder
@@ -425,15 +419,15 @@ _find_tile:
     cmp r1, r4              ; compare cur to random
     beq _tile_params        ; found
 
+    add r0, r0, #1
+    add r1, r1, #1
+    
     cmp r0, r6              ; can't be greater than length
     beq _reset_tile_i
 
-    add r0, r0, #1
-    add r1, r1, #1
 	b _find_tile
 _reset_tile_i:
     eor r0, r0, r0
-    add r1, r1, #1
     b _find_tile
 
 _tile_params:
@@ -452,9 +446,12 @@ _tile_2:
 
 _output_tile:
     bl update_subboard
-
+    bl place_square
+    b _exit_random_tile
 _game_over:                 ; TODO
-
+ 	orr r0, r0, r0
+	orr r0, r0, r0
+	orr r0, r0, r0
 _exit_random_tile:
 	LDMFD sp!, {lr, r4-r11}
 	mov pc, lr
@@ -462,19 +459,16 @@ _exit_random_tile:
 
 ;* shift right 
 ;* input - r0 (new move)
-;*       - r1 (prev move)    
 shift_right_wrapper:
 	STMFD SP!,{lr, r4-r5}
 
     mov r4, r0
-    mov r5, r1
 
     ldr r0, ptr_to_subboard
     bl shift_right_op
 
-    mov r2, r0  ; score
+    mov r1, r0  ; score
     mov r0, r4  ; new
-    mov r1, r5  ; prev
     bl update_shift
 
 	LDMFD sp!, {lr, r4-r5}
@@ -482,19 +476,16 @@ shift_right_wrapper:
 
 ;* shift left 
 ;* input - r0 (new move)
-;*       - r1 (prev move)
 shift_left_wrapper:
 	STMFD SP!,{lr, r4-r5}
 
     mov r4, r0
-    mov r5, r1
 
     ldr r0, ptr_to_subboard
     bl shift_left_op
 
-    mov r2, r0  ; score
+    mov r1, r0  ; score
     mov r0, r4  ; new
-    mov r1, r5  ; prev
     bl update_shift
 
 	LDMFD sp!, {lr, r4-r5}
@@ -502,19 +493,16 @@ shift_left_wrapper:
 
 ;* shift down
 ;* input - r0 (new move)
-;*       - r1 (prev move)
 shift_down_wrapper:
 	STMFD SP!,{lr, r4-r5}
 
     mov r4, r0
-    mov r5, r1
 
     ldr r0, ptr_to_subboard
     bl shift_down_op
 
-    mov r2, r0  ; score
+    mov r1, r0  ; score
     mov r0, r4  ; new
-    mov r1, r5  ; prev
     bl update_shift
 
 	LDMFD sp!, {lr, r4-r5}
@@ -522,19 +510,16 @@ shift_down_wrapper:
 
 ;* shift up
 ;* input - r0 (new move)
-;*       - r1 (prev move)
 shift_up_wrapper:
 	STMFD SP!,{lr, r4-r5}
 
     mov r4, r0
-    mov r5, r1
 
     ldr r0, ptr_to_subboard
     bl shift_up_op
 
-    mov r2, r0  ; score
+    mov r1, r0  ; score
     mov r0, r4  ; new
-    mov r1, r5  ; prev
     bl update_shift
 
 	LDMFD sp!, {lr, r4-r5}
@@ -543,20 +528,15 @@ shift_up_wrapper:
 
 ;* complete shift opertation
 ;* inputs - r0 (new move)
-;*        - r1 (prev move)
-;*        - r2 (score)
+;*        - r1 (score)
 update_shift:
 	STMFD SP!,{lr}
-    cmp r0, r1
-    bne _draw
-    cmp r2, #0
-    beq _exit_update_shift
 
 _draw:
-    mov r0, r2
+    mov r0, r1
     bl update_score
-    bl random_tile
     bl draw_board
+    bl random_tile
 
 _exit_update_shift:
 	LDMFD sp!, {lr}
