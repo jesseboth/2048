@@ -44,6 +44,9 @@ extern void _c_int00(void);
 extern void UART0_Handler(void);
 extern void Switch_Handler(void);
 extern void Timer_Handler(void);
+extern void Keypad_Handler(void);
+extern void keypad_Time_Handler(void);
+
 
 //*****************************************************************************
 //
@@ -89,7 +92,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port A
     IntDefaultHandler,                      // GPIO Port B
     IntDefaultHandler,                      // GPIO Port C
-    IntDefaultHandler,                      // GPIO Port D
+    Keypad_Handler,                         // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
     UART0_Handler,                          // UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
@@ -107,7 +110,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Watchdog timer
     Timer_Handler,                          // Timer 0 subtimer A
     IntDefaultHandler,                      // Timer 0 subtimer B
-    IntDefaultHandler,                      // Timer 1 subtimer A
+    keypad_Time_Handler,                    // Timer 1 subtimer A
     IntDefaultHandler,                      // Timer 1 subtimer B
     IntDefaultHandler,                      // Timer 2 subtimer A
     IntDefaultHandler,                      // Timer 2 subtimer B
