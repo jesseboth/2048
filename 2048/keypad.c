@@ -1,18 +1,32 @@
-#include "gpio.h"
-#include "keypad.h"
+/** Contains keypad related functions
+ *  keypad interrupt name: Keypad_Handler
+ *  Interrupt steps:
+ *                  check keypad_wait()
+ *                      if false -  keypad_clear_interrupt()
+ *                                  exit
+ *                  get char keypad_read
+ *                  (operations)
+ *                  keypad_clear_interrupt()
+*/
 
-int col[1];
+#include "keypad.h"
+#include "gpio.h"
+
+int col[1];     // active column
+int wait[1];    // time to wait
 
 char keys[KEYPAD_HEIGHT][KEYPAD_WIDTH] = {  {'1', '2', '3', 'A'}, 
                                             {'4', '5', '6', 'B'},
                                             {'7', '8', '9', 'C'},
                                             {'*', '0', '#', 'D'} };
 
+/** Initialize the keypad ports and interrupts */
 void keypad_init(void){
     *col = 0;
 
     /* enable portA */
     *((Reg)(SYSCTL+RCGCGPIO))   |= 0x9;         //Enable Port A and D
+    
     *((Reg)(PortA+GPIOAMSEL))   &= ~0x3C;       // turn off analog of GPIOA PA2-PA5
     *((Reg)(PortA+GPIODATA))    &= ~0x3C;       // PA2-PA5 output low
     *((Reg)(PortA+GPIODIR))     |= 0x3C;        // PA2-PA5 as GPIO output pins
@@ -43,10 +57,13 @@ void keypad_init(void){
     *((Reg)(Timer1+GPTMCTL))    |= 0x1;         // Enable timer T1 TAEN
 }
 
+/** Determines which key was pressed on the keypad */
 char keypad_read(){
+    char check = *((Reg)(PortD+GPIODATA));
     int i = 0;
     while(i<KEYPAD_HEIGHT){
-        if( (*((Reg)(PortD+GPIODATA)) & 0xF) == (1<<i)){
+        if((check & 0xF) == (1<<i)){
+            wait[0] = KEYPAD_WAIT;
             return keys[i][*col];
         }
         i++;
@@ -54,14 +71,25 @@ char keypad_read(){
     return 0;
 }
 
+/** Used to check if the keypad should be read from 
+     @returns true or false              
+*/
+int keypad_wait(){
+    return wait[0] == 0;
+}
+
+/** Clear the keypad interrupt */
 void keypad_clear_interrupt(){
     *((Reg)(PortD+GPIOICR))  |= 0xF;   // clear interrupt GPIOD PD0-PD3
 }
 
+/** Scans the keypad columns */
 void keypad_Time_Handler(void){
     *((Reg)(Timer1+GPTMICR)) |= 0x1;  // Clear interrupt
     col[0]++;
     col[0] %= 4;
+    wait[0] -= wait[0] > 0;
+    *((Reg)(PortA+GPIODIR))     |= 0x3C;        // PA2-PA5 as GPIO output pins
     *((Reg)(PortA+GPIODATA)) &= ~0x3C;          // PA2-PA5 output low
     *((Reg)(PortA+GPIODATA)) |= (1<<(col[0]+2));// col high
 }
