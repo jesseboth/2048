@@ -33,6 +33,8 @@ Timer_Handler:
     orr r2,r1 ,#1
     strb r2, [r0,#0x024]
 
+    bl update_timer
+
 _exit_timer_handler
     LDMFD sp!, {r0-r12,lr}
     BX lr
