@@ -63,12 +63,21 @@ open_tiles:     .space 32
     .global shift_left_wrapper
     .global shift_down_wrapper
     .global shift_up_wrapper
-
+    .global get_score
+    .global zero_score
+    .global clear_subboard
 
     .global output_string
     .global str2int
     .global int2str
 
+    .global game_over
+
+    .export check_move
+    .export check_move_right
+    .export check_move_left
+    .export check_move_down
+    .export check_move_up
     .export shift_right_op
     .export shift_left_op
     .export shift_down_op
@@ -404,8 +413,6 @@ _skip_tile:
     b _loop_board_x
 
 _stop_loop_board:
-    cmp r6, r6, #0
-    beq _game_over
 
     mov r1, #0x0050   ; address of timer
     movt r1, #0x4003
@@ -448,14 +455,9 @@ _output_tile:
     bl update_subboard
     bl place_square
     b _exit_random_tile
-_game_over:                 ; TODO
- 	orr r0, r0, r0
-	orr r0, r0, r0
-	orr r0, r0, r0
 _exit_random_tile:
 	LDMFD sp!, {lr, r4-r11}
 	mov pc, lr
-
 
 ;* shift right 
 ;* input - r0 (new move)
@@ -465,29 +467,55 @@ shift_right_wrapper:
     mov r4, r0
 
     ldr r0, ptr_to_subboard
+    bl check_move_right
+    cmp r0, #0
+    beq _right_check_end
+    ldr r0, ptr_to_subboard
     bl shift_right_op
 
     mov r1, r0  ; score
     mov r0, r4  ; new
     bl update_shift
+    b _exit_shift_right_wrapper
 
+_right_check_end:
+    ldr r0, ptr_to_subboard
+    bl check_move
+
+    cmp r0, #0
+    bne _exit_shift_right_wrapper
+    bl game_over
+_exit_shift_right_wrapper:
 	LDMFD sp!, {lr, r4-r5}
 	mov pc, lr
 
 ;* shift left 
-;* input - r0 (new move)
+;* input - r_0 (new move)
 shift_left_wrapper:
 	STMFD SP!,{lr, r4-r5}
 
     mov r4, r0
 
     ldr r0, ptr_to_subboard
+    bl check_move_left
+    cmp r0, #0
+    beq _left_check_end
+    ldr r0, ptr_to_subboard
     bl shift_left_op
 
     mov r1, r0  ; score
     mov r0, r4  ; new
     bl update_shift
+    b _exit_shift_left_wrapper
 
+_left_check_end:
+    ldr r0, ptr_to_subboard
+    bl check_move
+
+    cmp r0, #0
+    bne _exit_shift_left_wrapper
+    bl game_over
+_exit_shift_left_wrapper:
 	LDMFD sp!, {lr, r4-r5}
 	mov pc, lr
 
@@ -499,12 +527,25 @@ shift_down_wrapper:
     mov r4, r0
 
     ldr r0, ptr_to_subboard
+    bl check_move_down
+    cmp r0, #0
+    beq _down_check_end
+    ldr r0, ptr_to_subboard
     bl shift_down_op
 
     mov r1, r0  ; score
     mov r0, r4  ; new
     bl update_shift
+    b _exit_shift_down_wrapper
 
+_down_check_end:
+    ldr r0, ptr_to_subboard
+    bl check_move
+
+    cmp r0, #0
+    bne _exit_shift_down_wrapper
+    bl game_over
+_exit_shift_down_wrapper:
 	LDMFD sp!, {lr, r4-r5}
 	mov pc, lr
 
@@ -516,12 +557,25 @@ shift_up_wrapper:
     mov r4, r0
 
     ldr r0, ptr_to_subboard
+    bl check_move_up
+    cmp r0, #0
+    beq _up_check_end
+    ldr r0, ptr_to_subboard
     bl shift_up_op
 
     mov r1, r0  ; score
     mov r0, r4  ; new
     bl update_shift
+    b _exit_shift_up_wrapper
 
+_up_check_end:
+    ldr r0, ptr_to_subboard
+    bl check_move
+
+    cmp r0, #0
+    bne _exit_shift_up_wrapper
+    bl game_over
+_exit_shift_up_wrapper:
 	LDMFD sp!, {lr, r4-r5}
 	mov pc, lr
 
@@ -579,5 +633,40 @@ update_subboard:
 
     strb r2, [r5]
 
+	LDMFD sp!, {lr, r4-r11}
+	mov pc, lr
+
+get_score:
+	STMFD SP!,{lr}
+
+    ldr r0, ptr_to_score_string
+
+	LDMFD sp!, {lr}
+	mov pc, lr
+
+zero_score:
+	STMFD SP!,{lr, r4-r11}
+
+    ldr r0, ptr_to_score
+    eor r1, r1, r1
+    str r1, [r0]
+
+	LDMFD sp!, {lr, r4-r11}
+	mov pc, lr
+
+clear_subboard:
+	STMFD SP!,{lr, r4-r11}
+
+    mov r0, #16
+    ldr r1, ptr_to_subboard
+    mov r2, #0
+_clear_loop:
+    strb r2, [r1]
+    add r1, r1, #1
+    sub r0, r0, #1
+    cmp r0, #0
+    bne _clear_loop
+
+_exit_clear_subboard:
 	LDMFD sp!, {lr, r4-r11}
 	mov pc, lr

@@ -42,6 +42,42 @@ void replace_col(char *array, char *replace, char start, char stop){
     }
 }
 
+int check_move(char *array){
+    int x, y;
+
+    for(y = 0; y<ROW_LENGTH; y++){
+        for(x = 0; x<ROW_LENGTH; x++, array++){
+            if(*array){
+                if(y < ROW_LENGTH-1){
+                    if(*array == *(array + ROW_LENGTH)){
+                        return 1;
+                    }
+                }
+                if(y > 0){
+                    if(*array == *(array - ROW_LENGTH)){
+                        return 1;
+                    }
+                }
+                if(x < ROW_LENGTH-1){
+                    if(*array == *(array + 1)){
+                        return 1;
+                    }
+                }
+
+                if(x > 0){
+                    if(*array == *(array - 1)){
+                        return 1;
+                    }
+                }
+            }
+            else{
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
 
 void shift_right(char *shifted, char *toshift){
     int i = ROW_LENGTH-1;
@@ -74,7 +110,6 @@ int combine_right(char *arr){
     return score;
 }
 
-
 void shift_left(char *shifted, char *toshift){
     int i = 0;
     int j = 0;
@@ -104,6 +139,59 @@ int combine_left(char *arr){
         i++;
     }
     return score;
+}
+
+int check_move_right(char *array){
+    int x, y;
+    for(y = 0; y < ROW_LENGTH; y++){
+        for(x = 0; x < ROW_LENGTH-1; x++, array++){
+            if((*array != 0 && *array == *(array+1)) || (*array != 0 && *(array+1) == 0)){
+                return 1;
+            }
+        }
+        array++;
+    }
+    return 0;
+}
+
+int check_move_left(char *array){
+    int x, y;
+    for(y = 0; y < ROW_LENGTH; y++){
+        for(x = 0; x < ROW_LENGTH-1; x++, array++){
+            if((*array != 0 && *array == *(array+1)) || (*array == 0 && *(array+1) != 0)){
+                return 1;
+            }
+        }
+        array++;
+    }
+    return 0;
+}
+
+int check_move_down(char *array){
+    int x, y;
+    for(y = 0; y < ROW_LENGTH-1; y++){
+        for(x = 0; x < ROW_LENGTH; x++, array++){
+            if((*array != 0 && *array == *(array+ROW_LENGTH)) || (*array != 0 && *(array+ROW_LENGTH) == 0)){
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int check_move_up(char *array){
+    int x, y;
+    char a, b;
+    for(y = 0; y < ROW_LENGTH-1; y++){
+        for(x = 0; x < ROW_LENGTH; x++, array++){
+            a = *array;
+            b = *(array-ROW_LENGTH);
+            if((*array != 0 && *array == *(array+ROW_LENGTH)) || (*array == 0 && *(array+ROW_LENGTH) != 0)){
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 
 int shift_right_op(char *array){
