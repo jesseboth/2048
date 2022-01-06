@@ -18,7 +18,7 @@ int wait[1];    // time to wait
 char keys[KEYPAD_HEIGHT][KEYPAD_WIDTH] = {  {'1', 'w', 'w', 'A'},
                                             {'a', '5', '6', 'd'},
                                             {'a', '8', '9', 'd'},
-                                            {'*', 's', 's', 'D'} };
+                                            {'*', 's', 's', 0xD} };
 
 /** Initialize the keypad ports and interrupts */
 void keypad_init(void){
