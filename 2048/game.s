@@ -9,6 +9,7 @@ time_int:       .int 0
     .global update_timer
     .global game_input
     .global board_move
+    .global game_over
 
     ;* board
     .global output_boarder
@@ -17,6 +18,10 @@ time_int:       .int 0
     .global random_tile
     .global clear_board 
     .global make_title
+    .global make_end
+    .global get_score
+    .global zero_score
+    .global clear_subboard
 
     ;* shift
     .global shift_right_wrapper
@@ -50,6 +55,8 @@ start:
 
     bl make_title
 
+    bl game_over
+
 _again:
     wfi
     b _again
@@ -60,6 +67,13 @@ _again:
 ;* starts the game
 start_game:
     STMFD SP!,{r0-r12,lr}
+
+    ldr r0, ptr_to_time_int
+    eor r1, r1, r1
+    str r1, [r0]
+
+    bl zero_score
+    bl clear_subboard
 
     bl output_boarder
     bl random_tile
@@ -93,7 +107,7 @@ update_timer:
 
     ldr r0, ptr_to_time_string
     bl LCD_print
-    
+
 _exit_update_timer
     LDMFD sp!, {r4-r12,lr}       
     MOV pc, lr
@@ -158,3 +172,19 @@ _right_pressed:
 _exit_board_move:
     LDMFD sp!, {r4-r12,lr}       
     MOV pc, lr
+
+game_over:
+	STMFD SP!,{lr, r4-r11}
+
+    bl get_score
+
+    ldr r1, ptr_to_time_string
+    bl make_end
+
+    ldr r0, ptr_to_game_active
+    eor r1, r1, r1
+    str r1, [r0]
+
+
+	LDMFD sp!, {lr, r4-r11}
+	mov pc, lr
