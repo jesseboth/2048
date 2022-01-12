@@ -1,12 +1,12 @@
 /** Contains keypad related functions
  *  keypad interrupt name: Keypad_Handler
  *  Interrupt steps:
+ *                  keypad_clear_interrupt()
  *                  check keypad_wait()
  *                      if false -  keypad_clear_interrupt()
  *                                  exit
  *                  get char keypad_read
  *                  (operations)
- *                  keypad_clear_interrupt()
 */
 
 #include "keypad.h"
