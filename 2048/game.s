@@ -55,8 +55,6 @@ start:
 
     bl make_title
 
-    bl game_over
-
 _again:
     wfi
     b _again
